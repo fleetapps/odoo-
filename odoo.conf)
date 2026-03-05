@@ -1,4 +1,0 @@
-[options]
-admin_passwd = admin
-proxy_mode = True
-addons_path = /usr/lib/python3/dist-packages/odoo/addons
