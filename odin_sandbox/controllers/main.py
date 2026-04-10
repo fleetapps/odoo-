@@ -67,25 +67,25 @@ def _rpc_call(db, uid, method, args, kwargs=None):
 
 def _get_internal_user_group_id(db: str, uid: int) -> int:
     """
-    Resolve 'Internal User' group ID dynamically — avoids hardcoded IDs
-    that differ between Odoo installs.
+    Resolve Internal User group (base.group_user).
+
+    Odoo 19: res.groups no longer has category_id (moved to
+    res.groups.privilege.category_id). Using ir.model.data is stable across
+    17/18/19.
     """
     _, models = _rpc_connect(db)
-    ids = models.execute_kw(db, uid, ADMIN_PASSWORD,
-        'res.groups', 'search', [[
-            ['category_id.name', 'in', ['Administration', 'Extra Rights']],
-            ['name', '=', 'Internal User']
-        ]])
-    if ids:
-        return ids[0]
-    # Fallback: group_user ref
-    refs = models.execute_kw(db, uid, ADMIN_PASSWORD,
-        'ir.model.data', 'search_read',
-        [[['module', '=', 'base'], ['name', '=', 'group_user']]],
-        {'fields': ['res_id'], 'limit': 1})
-    if refs:
-        return refs[0]['res_id']
-    raise RuntimeError('Could not resolve Internal User group ID')
+    refs = models.execute_kw(
+        db,
+        uid,
+        ADMIN_PASSWORD,
+        "ir.model.data",
+        "search_read",
+        [[["module", "=", "base"], ["name", "=", "group_user"]]],
+        {"fields": ["res_id"], "limit": 1},
+    )
+    if refs and refs[0].get("res_id"):
+        return refs[0]["res_id"]
+    raise RuntimeError("Could not resolve base.group_user (Internal User)")
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +135,7 @@ class OdinSandboxController(http.Controller):
             uid, models = _rpc_connect(db_name)
             group_id = _get_internal_user_group_id(db_name, uid)
 
+            # Odoo 19: res.users.groups_id renamed to group_ids
             models.execute_kw(db_name, uid, ADMIN_PASSWORD,
                 'res.users', 'create', [{
                     'name': f'Preview {session_id[:8]}',
@@ -142,7 +143,7 @@ class OdinSandboxController(http.Controller):
                     'password': password,
                     'lang': 'en_US',
                     'tz': 'Africa/Nairobi',
-                    'groups_id': [(6, 0, [group_id])],
+                    'group_ids': [(6, 0, [group_id])],
                 }])
         except Exception as e:
             _logger.error('ODIN provision: user creation failed in %s: %s', db_name, e)
