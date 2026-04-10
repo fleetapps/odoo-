@@ -1,6 +1,6 @@
 {
     'name': 'ODIN Sandbox',
-    'version': '2.0',
+    'version': '2.1',
     'summary': 'Autologin, session provisioning and cleanup for ODIN ephemeral previews',
     'depends': ['base', 'web'],
     'data': [
