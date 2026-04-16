@@ -9,6 +9,5 @@
     'depends': ['web'],
     'installable': True,
     'post_load': 'apply_iframe_patch',
-    'auto_install': True,
     'application': False,
 }
